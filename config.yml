@@ -10,4 +10,4 @@ news_sites:
     queries:
       homepage_article_links: '.articulo-titulo a'
       article_body: '.articulo-cuerpo'
-      article_title: '.articulo-tirulares h1'
+      article_title: '.articulo-titulares h1'

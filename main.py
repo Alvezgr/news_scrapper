@@ -5,8 +5,9 @@ import argparse
 import logging
 import news_page_objects as news
 
-from requests.exceptions import HTTPError
-from urllib3.exceptions import MaxRetryError
+
+from requests.exceptions import HTTPError, ContentDecodingError, ConnectionError
+from urllib3.exceptions import MaxRetryError, NewConnectionError
 from common import config
 
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +31,6 @@ def _news_scraper(news_site_uid):
         if article:
             logger.info('Article Fetched!!!')
             articles.append(article)
-            break
     _save_articles(news_site_uid, articles)
 
 def _save_articles(news_site_uid, articles):
@@ -53,7 +53,7 @@ def _fetch_article(news_site_uid, host, link):
     try:
         article = news.ArticlePage(news_site_uid, _build_link(host, link))
 
-    except (HTTPError, MaxRetryError) as e:
+    except (HTTPError, MaxRetryError, NewConnectionError, ContentDecodingError, ConnectionError) as e:
         logger.warning('Error while fertching the article', exc_info=False)
 
     if article and not article.body:
