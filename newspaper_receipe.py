@@ -8,15 +8,20 @@ logger = logging.getLogger(__name__)
 
 
 def main(filename):
+    """Main function of the receipe"""
     logger.info('Starting cleaning process')
 
     df = _read_data(filename)
     newspaper_uid = _extract_newspaper_uid(filename)
     df = _add_newspaper_uid_column(df, newspaper_uid)
     df = _extract_host(df)
+    df = _fill_nan_data(df)
+
     return df
 
 def _extract_newspaper_uid(filename):
+    """Return the newspaper uid"""
+
     logger.info('Extracting newspaper uid')
     newspaper_uid = filename.split('_')[0]
 
@@ -24,21 +29,40 @@ def _extract_newspaper_uid(filename):
     return newspaper_uid
 
 def _add_newspaper_uid_column(df, newspaper_uid):
+    """Add the newspaper uid to a new colum"""
+
     logger.info('Filling the newspaper_uid colum iwth {}'.format(newspaper_uid))
     df['newspaper_uid'] = newspaper_uid
     return df
 
 def _read_data(filename):
+    """Reading the data"""
+
     logger.info('Reading file {}'.format(filename))
 
     return pd.read_csv(filename)
 
 def _extract_host(df):
+    """Extract host from the newspaper"""
+
     logger.info('Extracting host from urls')
     df['host'] = df['uri'].apply(lambda uri: urlparse(uri).netloc)
     return df
 
-if __name__== '__main__':
+def _fill_nan_data(df):
+    """Refilling missing data"""
+    logger.info('Filling Missing titles')
+    missing_titles_mask = df['title'].isna()
+
+    missing_titles = (df[missing_titles_mask]['uri']
+                      .str.extract(r'(?P<missing_titles>[^/]+)$')
+                      .applymap(lambda title: title.split('-'))
+                      .applymap(lambda title_word_list: ' '.join(title_word_list))
+                    )
+    df.loc[missing_titles_mask, 'title'] = missing_titles.loc[:, 'missing_titles']
+    return df
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('filename',
                         help='The path to the dirty data',
