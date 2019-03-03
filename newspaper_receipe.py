@@ -18,6 +18,7 @@ def main(filename):
     df = _extract_host(df)
     df = _fill_nan_data(df)
     df = _generate_uids_for_rows(df)
+    df = _remove_new_lines_from_body(df)
     return df
 
 def _extract_newspaper_uid(filename):
@@ -74,6 +75,18 @@ def _generate_uids_for_rows(df):
     df['uid'] = uids
     return df.set_index('uid')
 
+def _remove_new_lines_from_body(df):
+    """Removing new lines from the body"""
+    logger.info('Removing the newline')
+    stripped_body = (df
+                     .apply(lambda row: row['body'], axis=1)
+                     .apply(lambda body: list(body))
+                     .apply(lambda letters: list(map(lambda letter: letter.replace('\n',''), letters)))
+                     .apply(lambda letters: ''.join(letters))
+
+    )
+    df['body'] = stripped_body
+    return df
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
