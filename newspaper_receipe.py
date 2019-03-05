@@ -1,12 +1,16 @@
+"""Module for cleaning data"""
+
 import hashlib
 import argparse
 import logging
 from urllib.parse import urlparse
+import nltk
+from nltk.corpus import stopwords
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+stop_words = set(stopwords.words('spanish'))
 
 def main(filename):
     """Main function of the receipe"""
@@ -19,6 +23,8 @@ def main(filename):
     df = _fill_nan_data(df)
     df = _generate_uids_for_rows(df)
     df = _remove_new_lines_from_body(df)
+    df = _tokenize_column(df, 'title')
+    df = _tokenize_column(df, 'body')
     return df
 
 def _extract_newspaper_uid(filename):
@@ -81,11 +87,30 @@ def _remove_new_lines_from_body(df):
     stripped_body = (df
                      .apply(lambda row: row['body'], axis=1)
                      .apply(lambda body: list(body))
-                     .apply(lambda letters: list(map(lambda letter: letter.replace('\n',''), letters)))
+                     .apply(lambda letters:
+                            list(map(lambda letter: letter.replace('\n', ''), letters)))
                      .apply(lambda letters: ''.join(letters))
 
     )
     df['body'] = stripped_body
+    return df
+
+def _tokenize_column(df, column_name):
+    """Tokenize the title of each article"""
+    logger.info('Creating the token title')
+    tokenize = (df
+                .dropna()
+                .apply(lambda row: nltk.word_tokenize(row[column_name]), axis=1)
+                .apply(lambda tokens:
+                       list(filter(lambda token: token.isalpha(), tokens)))
+                .apply(lambda tokens:
+                       list(map(lambda token: token.lower(), tokens)))
+                .apply(lambda word_list:
+                       list(filter(lambda word: word not in stop_words, word_list)))
+                .apply(lambda valid_words: len(valid_words))
+
+                )
+    df['n_tokens_{}'.format(column_name)] = tokenize
     return df
 
 if __name__ == '__main__':
@@ -94,5 +119,4 @@ if __name__ == '__main__':
                         help='The path to the dirty data',
                         type=str)
     args = parser.parse_args()
-
     print(main(args.filename))
