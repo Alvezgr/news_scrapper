@@ -5,7 +5,6 @@ import argparse
 import logging
 import news_page_objects as news
 
-
 from requests.exceptions import HTTPError, ContentDecodingError, ConnectionError
 from urllib3.exceptions import MaxRetryError, NewConnectionError
 from common import config
